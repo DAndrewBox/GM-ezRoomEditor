@@ -27,13 +27,13 @@ function ezRoomEditor_set_as_editable_object() {
 /// @func	ezRoomEditor_get_edit_active(id)
 /// @param	{ref}	id
 function ezRoomEditor_get_edit_active(_id = id) {
-	return _id.__EZRE_EDIT_ACTIVE
+	return variable_instance_get(_id, "__EZRE_EDIT_ACTIVE") ?? false;
 }
 
 /// @func	ezRoomEditor_get_edit_active(id)
 /// @param	{ref}	id
 function ezRoomEditor_get_is_grab(_id = id) {
-	return _id.__EZRE_CURSOR_GRAB
+	return variable_instance_get(_id, "__EZRE_CURSOR_GRAB") ?? false;
 }
 
 /// @func	ezRoomEditor_get_camera_width()

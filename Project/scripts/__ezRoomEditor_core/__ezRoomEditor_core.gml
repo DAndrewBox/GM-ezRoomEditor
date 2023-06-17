@@ -19,20 +19,19 @@ function ezRoomEditor_core_get_variable_type_name(_type) {
 	}
 }
 
-/// @func	ezre_core_get_input_by_type(var_type, id, value)
+/// @func	ezRoomEditor_core_get_input_by_type(var_type, id, value)
 /// @param	{real}	var_type
 /// @param	{int}	id
 /// @param	{any}	value
-function ezre_core_get_input_by_type(_type, _id, _value) {
-	static _sprites		= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "sprites"];
-	static _sprites_len	= get_size(_sprites);
-	static _scripts		= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "scripts"];
-	static _scripts_len	= get_size(_scripts);
-	static _scripts_offset = 100001;
-	static _objects		= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "objects"];
-	static _objects_len	= get_size(_objects);
-			
-			
+function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
+	static _sprites			= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "sprites"];
+	static _sprites_len		= get_size(_sprites);
+	static _scripts			= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "scripts"];
+	static _scripts_len		= get_size(_scripts);
+	static _scripts_offset	= 100001;
+	static _objects			= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "objects"];
+	static _objects_len		= get_size(_objects);
+
 	var _label = $"##{_id}";
 	
 	switch (_type) {
@@ -103,7 +102,7 @@ function ezre_core_get_input_by_type(_type, _id, _value) {
 					ImGui.TextColored($"[{i}]", #777777);
 					ImGui.SameLine();
 					ImGui.SetNextItemWidth(ImGui.GetContentRegionAvailX());
-					_inputs[i] = ezre_core_get_input_by_type(_val_type, $"{_label}_arr_{i}", _val);
+					_inputs[i] = ezRoomEditor_core_get_input_by_type(_val_type, $"{_label}_arr_{i}", _val);
 				}
 				ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
 				
@@ -143,7 +142,7 @@ function ezre_core_get_input_by_type(_type, _id, _value) {
 					ImGui.SameLine();
 				}
 				ImGui.SetNextItemWidth(ImGui.GetContentRegionAvailX());
-				_value[$ _keys[i]] = ezre_core_get_input_by_type(_val_type, $"{_label}_struct_{i}_{_keys[i]}", _val);
+				_value[$ _keys[i]] = ezRoomEditor_core_get_input_by_type(_val_type, $"{_label}_struct_{i}_{_keys[i]}", _val);
 			}
 			ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
 			return _value;
@@ -198,6 +197,7 @@ function ezre_core_get_input_by_type(_type, _id, _value) {
 
 		case ezre_type_asset_script:
 			var _script_index = _value - _scripts_offset;
+			if (_script_index < 0) return _value;
 			var _img_h = ImGui.GetTextLineHeightWithSpacing();
 			
 			ImGui.PushItemWidth(ImGui.GetContentRegionAvailX());
@@ -541,7 +541,7 @@ function ezRoomEditor_core_controller_event_step() {
 							ImGui.EndTooltip();
 						}
 						ImGui.PushItemWidth(ImGui.GetContentRegionAvailX());
-						_var_edit_array[i][$ "value"] = ezre_core_get_input_by_type(_type, i, _var_edit_array[i][$ "value"]);
+						_var_edit_array[i][$ "value"] = ezRoomEditor_core_get_input_by_type(_type, i, _var_edit_array[i][$ "value"]);
 						ezRoomEditor_editable_set_variable_value(_inst_const_id, _name, _var_edit_array[i][$ "value"], _type);
 					}
 					ImGui.TreePop();

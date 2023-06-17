@@ -2,7 +2,8 @@
 display_set_gui_maximize(__EZRE_GUI_SCALE, __EZRE_GUI_SCALE);
 if (__EZRE_EDIT_ENABLED) {
 	draw_set_alpha(1);
-	draw_set_align(fa_center, fa_top);
+	draw_set_halign(fa_center);
+	draw_set_valign(fa_top);
 	draw_set_font(fnt_ezRoomEditor_default);
 	var _vw_x = camera_get_view_x(__EZRE_CAMERA);
 	var _vw_y = camera_get_view_y(__EZRE_CAMERA);
@@ -17,7 +18,7 @@ if (__EZRE_EDIT_ENABLED) {
 	
 	for (var i = 0; i < _inst_keys_len; i++) {
 		var _inst = __EZRE_EDIT_INSTANCES_AVAILABLE[$ _inst_keys[i]][$ "inst_in_room_id"];
-		if (_inst.__EZRE_IS_EDITABLE) {
+		if (instance_exists(_inst) && _inst.__EZRE_IS_EDITABLE) {
 			var _is_selected = (_inst == __EZRE_MODAL_INST_TO_TRACK && __EZRE_MODAL_STATE != __EZRE_MODAL_STATES.DISAPPEAR);
 			var _x_pos = [
 				(_inst.bbox_left - _vw_x) * _gui_xscale,
@@ -30,10 +31,11 @@ if (__EZRE_EDIT_ENABLED) {
 			var _x_mid = (_x_pos[0] + _x_pos[1]) / 2;
 			
 			
-			draw_set_align(fa_center, fa_top);
+			draw_set_halign(fa_center);
+			draw_set_valign(fa_top);
 			draw_set_alpha(_inst.__EZRE_CURSOR_GRAB || _is_selected ? 1. : .33);
-			draw_set_colour(_inst.__EZRE_CURSOR_GRAB || _is_selected ? c_white : c_gray);
-			draw_text_shadow(_x_mid, _y_pos[1] + 4, _inst_keys[i], 0, 1, c_white, c_purple);
+			draw_set_colour( _inst.__EZRE_CURSOR_GRAB || _is_selected ? c_white : #CCCCCC );
+			draw_text(_x_mid, _y_pos[1] + 4, _inst_keys[i]);
 			
 			draw_set_alpha(.08);
 			draw_set_colour(_is_selected ? _color_selected[0] : _color_unselected[0]);

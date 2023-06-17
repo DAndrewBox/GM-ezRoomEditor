@@ -1,11 +1,11 @@
 {
   "resourceType": "GMScript",
   "resourceVersion": "1.0",
-  "name": "__ezUI_Modal_logic",
+  "name": "lib_colors",
   "isCompatibility": false,
   "isDnD": false,
   "parent": {
-    "name": "Scripts",
-    "path": "folders/Libraries/GM-EzUI/Scripts.yy",
+    "name": "Core",
+    "path": "folders/Libraries/GML-Extended/Functions/Core.yy",
   },
 }

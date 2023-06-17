@@ -34,7 +34,7 @@ if (get_size(__EZRE_EDIT_INSTANCES_AVAILABLE) == 0) {
 				continue;
 			}
 		
-			var _inst_is_editable = variable_instance_get(_inst_id, "__EZRE_IS_EDITABLE");
+			var _inst_is_editable = variable_instance_get(_inst_id, "__EZRE_IS_EDITABLE") ?? false;
 			if (!_inst_is_editable) {
 				struct_remove(__EZRE_EDIT_INSTANCES_AVAILABLE, _inst[$ "name"]);
 				continue;
@@ -43,5 +43,11 @@ if (get_size(__EZRE_EDIT_INSTANCES_AVAILABLE) == 0) {
 			_inst_id.__EZRE_EDIT_CONST_ID = _inst[$ "name"];
 			_inst_id.__EZRE_EDIT_ACTIVE = true;
 		}
+	}
+} else {
+	var _instances = ezRoomEditor_core_get_editable_instances_ids();
+	for (var i = 0; i < get_size(_instances); i++) {
+		if (!instance_exists(_instances[i])) continue;
+		_instances[i].__EZRE_EDIT_ACTIVE = true;
 	}
 }

@@ -43,7 +43,7 @@
       ],"multiselect":true,"rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"value":"\"Item 0\", \"Item 1\", \"Item 2\"","varType":6,},
     {"resourceType":"GMObjectProperty","resourceVersion":"1.0","name":"SPRITE_LIST","filters":[
         "GMSprite",
-      ],"listItems":[],"multiselect":false,"rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"value":"s_ezUI_button","varType":5,},
+      ],"listItems":[],"multiselect":false,"rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"value":"s_ezRoomEditor_empty","varType":5,},
     {"resourceType":"GMObjectProperty","resourceVersion":"1.0","name":"SCRIPTS_LIST","filters":[
         "GMScript",
       ],"listItems":[],"multiselect":false,"rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"value":"lib_arrays","varType":5,},

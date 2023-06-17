@@ -2,16 +2,17 @@
 /// @param	{str}	string
 /// @param	{str}	substring
 function string_contains(_str, _substr) {
-	return string_pos(_substr, _str) != 0;
+	return string_pos(_substr, _str) > 0;
 }
 
 /// @func string_title(string)
 /// @param	{str}	string
 function string_title(_str) {
-	var _out = "";
-	var _prev_char = " ";
+	var _out		= "";
+	var _prev_char	= " ";
+	var _str_len	= string_length(_str);
 	
-	for (var i = 1; i <= string_length(_str); i++) {
+	for (var i = 1; i <= _str_len; i++) {
 		var _char = string_copy(_str, i, 1);
 		if (_prev_char == " ") {
 			_out += string_upper(_char);
