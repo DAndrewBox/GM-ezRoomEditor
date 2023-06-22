@@ -4,7 +4,7 @@ function ezRoomEditor_core_get_variable_type_name(_type) {
 	switch (_type) {
 		default:
 		case ezre_type_any:				return "Any";
-		case ezre_type_string_long:
+		case ezre_type_string_long:		return "Long Text";
 		case ezre_type_string:			return "Text";
 		case ezre_type_bool:			return "Bool";
 		case ezre_type_real:			return "Number";
@@ -16,14 +16,38 @@ function ezRoomEditor_core_get_variable_type_name(_type) {
 		case ezre_type_asset_sprite:	return "Sprite";
 		case ezre_type_asset_script:	return "Script";
 		case ezre_type_asset_object:	return "Object";
+		case ezre_type_asset_audio:		return "Audio";
 	}
 }
 
-/// @func	ezRoomEditor_core_get_input_by_type(var_type, id, value)
+/// @func	ezRoomEditor_core_get_type_description(var_type)
+/// @param	{real}	var_type
+function ezRoomEditor_core_get_type_description(_type) {
+	switch (_type) {
+		default:
+		case ezre_type_any:				return "Use it just for tests.\nCannot be edited.";
+		case ezre_type_string_long:		return "A string variable capable of storing long text or multiple lines."
+		case ezre_type_string:			return "A variable used to store a sequence of characters or text.";
+		case ezre_type_bool:			return "A boolean variable representing only \"true\" or \"false\" values.";
+		case ezre_type_real:			return "A variable for storing decimal numbers with floating-point precision.";
+		case ezre_type_int:				return "An integer variable used for storing whole numbers without decimal places.";
+		case ezre_type_array:			return "A container variable that holds multiple values of any type.\nThe type of all inputs will be defined by the first element.";
+		case ezre_type_struct:			return "A variable representing a custom data structure with multiple properties.";
+		case ezre_type_color:			return "A variable holding a color value using RGB format.";
+		case ezre_type_color_rgba:		return "A variable holding a color value using RGBA format, including transparency.";
+		case ezre_type_asset_sprite:	return "A variable referencing a sprite asset.";
+		case ezre_type_asset_script:	return "A variable referencing a script asset.";
+		case ezre_type_asset_object:	return "A variable referencing an object asset.";
+		case ezre_type_asset_audio:		return "A variable referencing an audio asset.";
+	}
+}
+
+/// @func	ezRoomEditor_core_get_input_by_type(var_type, id, value, slider_range)
 /// @param	{real}	var_type
 /// @param	{int}	id
 /// @param	{any}	value
-function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
+/// @param	{array}	slider_range
+function ezRoomEditor_core_get_input_by_type(_type, _id, _value, _slider_range = undefined) {
 	static _sprites			= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "sprites"];
 	static _sprites_len		= get_size(_sprites);
 	static _scripts			= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "scripts"];
@@ -31,6 +55,12 @@ function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
 	static _scripts_offset	= 100001;
 	static _objects			= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "objects"];
 	static _objects_len		= get_size(_objects);
+	static _audios			= __EZRE_CONTROLLER.__EZRE_ASSETS[$ "sounds"];
+	static _audios_len		= get_size(_audios);
+	
+	static validate_slider= function (_slider) {
+		return _slider != undefined && is_array(_slider) && get_size(_slider) > 1;
+	}
 
 	var _label = $"##{_id}";
 	
@@ -42,8 +72,16 @@ function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
 		case ezre_type_string:		return ImGui.InputTextWithHint(_label, "Write something here...", _value);
 		case ezre_type_string_long:	return ImGui.InputTextMultiline(_label, _value,,, ImGuiInputTextFlags.AllowTabInput);
 		case ezre_type_bool:		return ImGui.Checkbox(_label, _value);
-		case ezre_type_real:		return ImGui.InputFloat(_label, _value, .1,,"%.2f");
-		case ezre_type_int:			return ImGui.InputInt(_label, _value);
+		case ezre_type_real:
+			if (validate_slider(_slider_range)) {
+				return ImGui.SliderFloat(_label, _value, _slider_range[0], _slider_range[1], $"%.{__EZRE_FLOAT_DIGITS}f", ImGuiSliderFlags.AlwaysClamp);
+			}
+			return ImGui.InputFloat(_label, _value, 1 / (1 + __EZRE_FLOAT_DIGITS),, $"%.{__EZRE_FLOAT_DIGITS}f");
+		case ezre_type_int:
+			if (validate_slider(_slider_range)) {
+				return ImGui.SliderInt(_label, _value, _slider_range[0], _slider_range[1],, ImGuiSliderFlags.AlwaysClamp);
+			}
+			return ImGui.InputInt(_label, _value);
 		case ezre_type_array:
 			var _first_element = _value[0];
 			if (is_string(_first_element)) {
@@ -106,7 +144,7 @@ function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
 				}
 				ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
 				
-				return _inputs;
+				return _inputs[0];
 			}
 		
 			if (real(_first_element) == round(real(_first_element))) {
@@ -166,23 +204,34 @@ function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
 					
 			ImGui.AlignTextToFramePadding();
 			ImGui.SetCursorPos(ImGui.GetCursorPosX() + 2, ImGui.GetCursorPosY() + 2);
-			ImGui.Image(_spr_index, 0,,, _img_h, _img_h);
+			ImGui.Image(_spr_index < 0 ? s_ezRoomEditor_empty : _spr_index, 0,,, _img_h, _img_h);
 			ImGui.SetCursorPos(ImGui.GetCursorPosX() - 2, ImGui.GetCursorPosY() - 2);
 			ImGui.SameLine();
 			ImGui.PushItemWidth(ImGui.GetContentRegionAvailX());
-			if (ImGui.BeginCombo($"{_label}_sprIndex", _sprites[_spr_index], ImGuiComboFlags.None)) {							
-				for (var i = 0; i < _sprites_len; i++) {
+			
+			if (ImGui.BeginCombo($"{_label}_sprIndex", (_spr_index < 0 ? "<noone>" : _sprites[_spr_index]), ImGuiComboFlags.None)) {							
+				for (var i = -1; i < _sprites_len; i++) {
 					var _is_selected = _spr_index == i;
-					var _selectable = ImGui.Selectable($"{_label}_spr{i}", _is_selected);
+					if (i != -1 && _sprites[i] == undefined) continue;
+					var _selectable = ImGui.Selectable($"{_label}_spr{i}", _is_selected);								
 					ImGui.SameLine();
-					ImGui.Image(i, 0,,, _img_h, _img_h);
-					ImGui.SameLine();
-					ImGui.Indent(_img_h + 12);
-					ImGui.Text(_sprites[i]);
-					ImGui.Unindent(_img_h + 12);
+					
+					if (i == -1) {
+						ImGui.Image(s_ezRoomEditor_empty, 0,,, _img_h, _img_h);
+						ImGui.SameLine();
+						ImGui.Indent(_img_h + 12);
+						ImGui.Text("<noone>");
+						ImGui.Unindent(_img_h + 12);
+					} else {
+						ImGui.Image(i, 0,,, _img_h, _img_h);
+						ImGui.SameLine();
+						ImGui.Indent(_img_h + 12);
+						ImGui.Text(_sprites[i]);
+						ImGui.Unindent(_img_h + 12);
+					}
 								
 					if (_selectable) {
-						_value = i;
+						_value = i < 0 ? noone : i;
 						break;
 					}
 							
@@ -197,20 +246,26 @@ function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
 
 		case ezre_type_asset_script:
 			var _script_index = _value - _scripts_offset;
-			if (_script_index < 0) return _value;
+			if (_script_index < 0 && _value != noone) return _value;
 			var _img_h = ImGui.GetTextLineHeightWithSpacing();
 			
 			ImGui.PushItemWidth(ImGui.GetContentRegionAvailX());
-			if (ImGui.BeginCombo($"{_label}_scriptIndex", _scripts[_script_index], ImGuiComboFlags.None)) {							
-				for (var i = 0; i < _scripts_len; i++) {
-					if (_scripts[i] == undefined) continue;
+			if (ImGui.BeginCombo($"{_label}_scriptIndex", (_script_index < 0 ? "<noone>" : _scripts[_script_index]), ImGuiComboFlags.None)) {							
+				for (var i = -1; i < _scripts_len; i++) {
 					var _is_selected = _script_index == i;
+					if (i != -1 && _scripts[i] == undefined) continue;
 					var _selectable = ImGui.Selectable($"{_label}_script_{i}", _is_selected);
-					ImGui.SameLine();
-					ImGui.Text(_scripts[i]);
+					
+					if (i == -1) {
+						ImGui.SameLine();
+						ImGui.Text("<noone>");
+					} else {
+						ImGui.SameLine();
+						ImGui.Text(_scripts[i]);
+					}
 								
 					if (_selectable) {
-						_value = i + _scripts_offset;
+						_value = ( i < 0 ? noone : (i + _scripts_offset) );
 						break;
 					}
 							
@@ -230,21 +285,62 @@ function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
 			var _img_h = ImGui.GetTextLineHeightWithSpacing();
 			
 			ImGui.PushItemWidth(ImGui.GetContentRegionAvailX());
-			if (ImGui.BeginCombo($"{_label}_objIndex", _objects[_obj_index], ImGuiComboFlags.None)) {							
-				for (var i = 0; i < _objects_len; i++) {
-					if (_objects[i] == undefined) continue;
+			if (ImGui.BeginCombo($"{_label}_objIndex", (_obj_index < 0 ? "<noone>" : _objects[_obj_index]), ImGuiComboFlags.None)) {							
+				for (var i = -1; i < _objects_len; i++) {
+					if (i != -1 && _objects[i] == undefined) continue;
 					var _is_selected = _obj_index == i;
 					var _selectable = ImGui.Selectable($"{_label}_obj{i}", _is_selected);
-					var _obj_sprite = object_get_sprite(i);
+					
+					if (i == -1) {
+						ImGui.SameLine();
+						ImGui.Image(s_ezRoomEditor_empty, 0,,, _img_h, _img_h);
+						ImGui.SameLine();
+						ImGui.Indent(_img_h + 12);
+						ImGui.Text("<noone>");
+						ImGui.Unindent(_img_h + 12);
+					} else {
+						var _obj_sprite = object_get_sprite(i);
+						ImGui.SameLine();
+						ImGui.Image(_obj_sprite == -1 ? s_ezRoomEditor_empty : _obj_sprite, 0,,, _img_h, _img_h);
+						ImGui.SameLine();
+						ImGui.Indent(_img_h + 12);
+						ImGui.Text(_objects[i]);
+						ImGui.Unindent(_img_h + 12);
+					}
+					
+					if (_selectable) {
+						_value = i < 0 ? noone : i;
+						break;
+					}
+							
+					if (_is_selected) {
+						ImGui.SetItemDefaultFocus();
+					}
+				}
+				ImGui.EndCombo();
+			}
+			
+			return _value;
+			
+		case ezre_type_asset_audio:
+			var _audio_index = _value;
+			
+			ImGui.PushItemWidth(ImGui.GetContentRegionAvailX());
+			if (ImGui.BeginCombo($"{_label}_audioIndex", (_audio_index < 0 ? "<noone>" : _audios[_audio_index]) , ImGuiComboFlags.None)) {							
+				for (var i = -1; i < _audios_len; i++) {
+					if (i != -1 && _audios[i] == undefined) continue;
+					var _is_selected = _audio_index == i;
+					var _selectable = ImGui.Selectable($"{_label}_audio{i}", _is_selected);
 					ImGui.SameLine();
-					ImGui.Image(_obj_sprite == -1 ? s_ezRoomEditor_empty : _obj_sprite, 0,,, _img_h, _img_h);
-					ImGui.SameLine();
-					ImGui.Indent(_img_h + 12);
-					ImGui.Text(_objects[i]);
-					ImGui.Unindent(_img_h + 12);
+					
+					if (i == -1) {
+						ImGui.Text("<noone>");
+					} else {
+						ImGui.Text(_audios[i]);
+					}
 								
 					if (_selectable) {
-						_value = i;
+						_value = i < 0 ? noone : i;
 						break;
 					}
 							
@@ -263,7 +359,8 @@ function ezRoomEditor_core_get_input_by_type(_type, _id, _value) {
 function ezRoomEditor_core_get_editable_instances_ids() {
 	var _inst_keys = struct_keys(__EZRE_CONTROLLER.__EZRE_EDIT_INSTANCES_AVAILABLE);
 	var _inst_ids = [];
-	for (var i = 0; i < get_size(__EZRE_CONTROLLER.__EZRE_EDIT_INSTANCES_AVAILABLE); i++) {
+	var _inst_available_len = get_size(__EZRE_CONTROLLER.__EZRE_EDIT_INSTANCES_AVAILABLE);
+	for (var i = 0; i < _inst_available_len; i++) {
 		var _inst = __EZRE_CONTROLLER.__EZRE_EDIT_INSTANCES_AVAILABLE[$ _inst_keys[i]][$ "inst_in_room_id"];
 		array_push(_inst_ids, _inst);
 	}
@@ -276,7 +373,16 @@ function ezRoomEditor_core_get_editable_instances_ids() {
 /// @param	{str}	prop_name
 /// @param	{any}	new_value
 function ezRoomEditor_core_property_get_override_struct(_inst_id, _prop_name, _value) {
-	var _obj_name = object_get_name(_inst_id.object_index);
+	var _var_index = -1;
+	var _vars_len = get_size(_inst_id.__EZRE_EDIT_VARIABLES);
+	for (var i = 0; i < _vars_len; i++) {
+		if (_prop_name == _inst_id.__EZRE_EDIT_VARIABLES[@ i][$ "name"]) {
+			_var_index = i;
+			break;
+		}
+	}
+	
+	var _obj_name = _inst_id.__EZRE_EDIT_VARIABLES[_var_index].propParentName;
 	var _struct = {
 		resourceType: "GMOverriddenProperty",
 		resourceVersion: "1.0",
@@ -314,6 +420,17 @@ function ezRoomEditor_core_get_instance_id(_inst_const, _x, _y) {
 	return _inst_id;
 }
 
+/// @func	ezRoomEditor_core_get_creation_code(inst_const_name)
+/// @param	{str}	inst_const_name
+function ezRoomEditor_core_get_creation_code(_inst_const) {
+	var _filepath = $"{__EZRE_CONTROLLER.__EZRE_ROOMS_PATH}\\{room_get_name(room)}\\InstanceCreationCode_{_inst_const}.gml";
+	var _file = file_text_open_read(_filepath);
+	var _creation_code = file_text_read_whole(_file);
+	file_text_close(_file);
+	
+	return _creation_code;
+}
+
 /// @func	ezRoomEditor_core_get_builtin_equivalent(var_name)
 /// @param	{str}	var_name
 function ezRoomEditor_core_get_builtin_equivalent(_var_name) {
@@ -337,7 +454,7 @@ function ezRoomEditor_core_controller_event_step() {
 	ImGui.SetNextWindowPos(__EZRE_MODAL_X, 0);
 	ImGui.SetNextWindowSize(__EZRE_MODAL_WIDTH, __EZRE_MODAL_HEIGHT, ImGuiCond.Once);
 	
-	var _window = ImGui.Begin($"{_obj_name} ({_inst_const_id})##mainWindow", true, _panel_flags, ImGuiReturnMask.Both);
+	var _window = ImGui.Begin($"{_obj_name} ({_inst_const_id})##mainWindow",, _panel_flags, ImGuiReturnMask.Both);
 	if (__EZRE_EDIT_ENABLED && _window) {
 		var _tabbar_flags = ImGuiTabBarFlags.NoCloseWithMiddleMouseButton;
 		if (ImGui.BeginTabBar("TabBar", _tabbar_flags)) {
@@ -502,13 +619,13 @@ function ezRoomEditor_core_controller_event_step() {
 				
 				ImGui.Separator();
 		
-				if (ImGui.TreeNodeEx("Properties", ImGuiTreeNodeFlags.DefaultOpen)) {
+				var _var_edit_array = __EZRE_MODAL_INST_TO_TRACK.__EZRE_EDIT_VARIABLES;
+				if (ImGui.TreeNodeEx("Properties (Pre-Create)")) {
 					ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
-					
-					var _var_edit_array = __EZRE_MODAL_INST_TO_TRACK.__EZRE_EDIT_VARIABLES;
 					var _len = get_size(_var_edit_array);
 					var _name, _type;
 					for (var i = 0; i < _len; i++) {
+						if !(_var_edit_array[i][$ "isProperty"]) continue;
 						var _name = _var_edit_array[i][$ "name"];
 						var _type = _var_edit_array[i][$ "type"];
 						var _type_name = $"({ezRoomEditor_core_get_variable_type_name(_type)})";
@@ -537,16 +654,99 @@ function ezRoomEditor_core_controller_event_step() {
 							ImGui.TextColored($"{_name}", c_yellow);
 							ImGui.SameLine();
 							ImGui.TextColored(_type_name, #777777);
-							ImGui.TextWrapped("You can change this using `ezRoomEditor_add_variable()` 3rd parameter.");
+							ImGui.TextWrapped(ezRoomEditor_core_get_type_description(_type));
 							ImGui.EndTooltip();
 						}
 						ImGui.PushItemWidth(ImGui.GetContentRegionAvailX());
-						_var_edit_array[i][$ "value"] = ezRoomEditor_core_get_input_by_type(_type, i, _var_edit_array[i][$ "value"]);
+						var _slider_enabled = _var_edit_array[i][$ "sliderEnabled"];
+						_var_edit_array[i][$ "value"] = ezRoomEditor_core_get_input_by_type(_type, i, _var_edit_array[i][$ "value"], _slider_enabled ? _var_edit_array[i][$ "sliderRange"] : undefined);
 						ezRoomEditor_editable_set_variable_value(_inst_const_id, _name, _var_edit_array[i][$ "value"], _type);
 					}
 					ImGui.TreePop();
 					ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
 					ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+				}
+				
+				ImGui.Separator();
+				
+				if (ImGui.TreeNodeEx("Variables")) {
+					ImGui.Unindent(ImGui.GetTreeNodeToLabelSpacing());
+					
+					var _len = get_size(_var_edit_array);
+					var _name, _type;
+					for (var i = 0; i < _len; i++) {
+						if (_var_edit_array[i][$ "isProperty"]) continue;
+						var _name = _var_edit_array[i][$ "name"];
+						var _type = _var_edit_array[i][$ "type"];
+						var _type_name = $"({ezRoomEditor_core_get_variable_type_name(_type)})";
+			
+						// Skip default vars
+						if (_name == "x" || _name == "y" || _name == "depth" ||
+							_name == "image_index" || _name == "image_speed" || 
+							_name == "image_angle" || _name == "image_blend" ||
+							_name == "image_xscale" || _name == "image_yscale") {
+						
+							_var_edit_array[i][$ "value"] = variable_instance_get(__EZRE_MODAL_INST_TO_TRACK, _name);						
+							ezRoomEditor_editable_set_variable_value(_inst_const_id, _name, _var_edit_array[i][$ "value"], _type);
+							continue;
+
+						}
+
+						ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+
+						// Draw input
+						ImGui.Text(_name);
+						ImGui.SameLine(8 + ImGui.GetContentRegionAvailX() - ImGui.CalcTextWidth(_type_name));
+						ImGui.TextColored(_type_name, #777777);
+						if (ImGui.IsItemHovered()) {
+							ImGui.SetNextWindowSize(ezRoomEditor_get_camera_width(), -1);
+							ImGui.BeginTooltip();
+							ImGui.TextColored($"{_name}", c_yellow);
+							ImGui.SameLine();
+							ImGui.TextColored(_type_name, #777777);
+							ImGui.TextWrapped(ezRoomEditor_core_get_type_description(_type));
+							ImGui.EndTooltip();
+						}
+						ImGui.PushItemWidth(ImGui.GetContentRegionAvailX());
+						var _slider_enabled = _var_edit_array[i][$ "sliderEnabled"];
+						_var_edit_array[i][$ "value"] = ezRoomEditor_core_get_input_by_type(_type, i, _var_edit_array[i][$ "value"], _slider_enabled ? _var_edit_array[i][$ "sliderRange"] : undefined);
+						ezRoomEditor_editable_set_variable_value(_inst_const_id, _name, _var_edit_array[i][$ "value"], _type);
+					}
+					
+					ImGui.TreePop();
+					ImGui.Indent(ImGui.GetTreeNodeToLabelSpacing());
+					ImGui.SetCursorPosY(ImGui.GetCursorPosY() + 4);
+				}
+				
+				ImGui.Separator();
+					
+				if (__EZRE_MODAL_INST_TO_TRACK.__EZRE_EDIT_CREATION_CODE != false) {
+					var _gui_w = gui_width();
+					var _gui_h = gui_height();
+					
+					if (ImGui.Button($"{__EZRE_CONTROLLER.__EZRE_CC_SHOW ? "Hide Creation Code" : "Show Creation Code"}##btnCreationCode", ImGui.GetContentRegionAvailX(), 24)) {
+						__EZRE_CONTROLLER.__EZRE_CC_SHOW = !(__EZRE_CONTROLLER.__EZRE_CC_SHOW);
+					};
+					
+					if (__EZRE_CONTROLLER.__EZRE_CC_SHOW && __EZRE_CONTROLLER.__EZRE_MODAL_STATE == __EZRE_MODAL_STATES.OPEN) {
+						var _cc_window_w = min(_gui_w - __EZRE_CONTROLLER.__EZRE_MODAL_WIDTH, string_width(__EZRE_MODAL_INST_TO_TRACK.__EZRE_EDIT_CREATION_CODE) + 12);
+						var _cc_window_x = 
+							__EZRE_CONTROLLER.__EZRE_MODAL_X < _gui_w / 2
+							? _gui_w - _cc_window_w
+							: 0
+						ImGui.SetNextWindowPos(_cc_window_x, __EZRE_CONTROLLER.__EZRE_MODAL_Y, ImGuiCond.Appearing);
+						ImGui.SetNextWindowSize(_cc_window_w, _gui_h / 3, ImGuiCond.Once);
+						if (ImGui.Begin("Creation Code (Read-Only)##creationCodeFrame",, ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoCollapse)) {
+							ImGui.InputTextMultiline(
+								"##creationCodeViewer",
+								__EZRE_MODAL_INST_TO_TRACK.__EZRE_EDIT_CREATION_CODE,
+								ImGui.GetContentRegionAvailX(),
+								ImGui.GetContentRegionAvailY(),
+								ImGuiInputTextFlags.ReadOnly
+							);
+							ImGui.End();
+						}
+					}
 				}
 				ImGui.EndTabItem();
 			} 
@@ -640,7 +840,6 @@ function ezRoomEditor_core_controller_event_step() {
 		
 		if (_button_save) {
 			event_user_exec(__EZRE_CONTROLLER, 2);
-			// __EZRE_MODAL_STATE = __EZRE_MODAL_STATES.DISAPPEAR;
 			show_message_async("Room saved.\n[Reload] room in to see changes in the editor.");
 		}
 		

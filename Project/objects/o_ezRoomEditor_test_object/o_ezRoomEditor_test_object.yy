@@ -50,6 +50,9 @@
     {"resourceType":"GMObjectProperty","resourceVersion":"1.0","name":"OBJECTS_LIST","filters":[
         "GMObject",
       ],"listItems":[],"multiselect":false,"rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"value":"o_ezRoomEditor_Controller","varType":5,},
+    {"resourceType":"GMObjectProperty","resourceVersion":"1.0","name":"AUDIO_LIST","filters":[
+        "GMSound",
+      ],"listItems":[],"multiselect":false,"rangeEnabled":false,"rangeMax":10.0,"rangeMin":0.0,"value":"noone","varType":5,},
   ],
   "solid": false,
   "spriteId": {

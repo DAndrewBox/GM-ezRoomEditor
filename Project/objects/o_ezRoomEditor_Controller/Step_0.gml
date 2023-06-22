@@ -1,5 +1,5 @@
 /// @description Step
-if (keyboard_check_direct(vk_control) && keyboard_check_pressed(vk_f1)) {
+if (keyboard_check_pressed(__EZRE_EDIT_TOGGLE_KEY)) {
 	__EZRE_MODAL_WIDTH	= gui_width() * .35;
 	__EZRE_MODAL_HEIGHT = gui_height();
 	ezRoomEditor_set_edit_mode(!__EZRE_EDIT_ENABLED);

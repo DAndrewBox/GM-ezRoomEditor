@@ -6,6 +6,7 @@ function ezRoomEditor_set_as_editable_object() {
 	__EZRE_EDIT_ACTIVE   = true;
 	__EZRE_EDIT_VARIABLES = [];
 	__EZRE_EDIT_IGNORED	 = [];
+	__EZRE_EDIT_CREATION_CODE = false;
 	__EZRE_CURSOR_GRAB	 = false;
 	__EZRE_CURSOR_OFFSET = [0, 0];
 	__EZRE_CURSOR_RADIUS = 12;
@@ -21,6 +22,7 @@ function ezRoomEditor_set_as_editable_object() {
 		"__EZRE_CURSOR_RADIUS",
 		"__EZRE_GRID_SIZE",
 		"__EZRE_EDIT_VARIABLES",
+		"__EZRE_EDIT_CREATION_CODE",
 	]);
 }
 
@@ -53,14 +55,16 @@ function ezRoomEditor_set_editable_grid(_grid_w, _grid_h) {
 	__EZRE_GRID_SIZE = [_grid_w, _grid_h];
 }
 
-/// @func	ezRoomEditor_set_editable_variables(var_array, is_property, _type)
+/// @func	ezRoomEditor_set_editable_variables(var_array, _type, is_property, property_parent)
 /// @param	{array}	var_array
-/// @param	{bool}	is_property
 /// @param	{real}	type
-function ezRoomEditor_set_editable_variables(_arr, _is_prop = false, _type = ezre_type_any) {
+/// @param	{bool}	is_property
+/// @param	{str}	property_parent
+function ezRoomEditor_set_editable_variables(_arr, _type = ezre_type_any, _is_prop = false, _prop_parent_name = undefined) {
 	__EZRE_EDIT_VARIABLES = [];
+	var _len = get_size(_arr);
 	
-	for (var i = 0; i < get_size(_arr); i++) {
+	for (var i = 0; i < _len; i++) {
 		if (ezRoomEditor_core_get_forbidden_variable(_arr[i])) continue;
 		
 		__EZRE_EDIT_VARIABLES[i] = {
@@ -68,20 +72,24 @@ function ezRoomEditor_set_editable_variables(_arr, _is_prop = false, _type = ezr
 			value: variable_instance_get(id, _arr[i]),
 			type: _type,
 			isProperty: _is_prop,
+			propParentName: _prop_parent_name ?? object_get_name(id.object_index),
+			sliderEnabled: false,
+			sliderRange: [0, 1],
 		};
 	}
 }
 
-/// @func	ezRoomEditor_add_editable_variables(str_or_array, is_property, type)
+/// @func	ezRoomEditor_add_editable_variables(str_or_array, type, is_property, property_parent)
 /// @param	{str|array}	str_or_array
-/// @param	{bool}	is_property
 /// @param	{real}	type
-function ezRoomEditor_add_editable_variables(_vars, _is_prop = false, _type = ezre_type_any) {
+/// @param	{bool}	is_property
+/// @param	{str}	property_parent
+function ezRoomEditor_add_editable_variables(_vars, _type = ezre_type_any, _is_prop = false, _prop_parent_name = undefined) {
 	if (is_string(_vars)) {
 		_vars = [_vars];
 	}
-	var _len = get_size(_vars);
 	
+	var _len = get_size(_vars);
 	for (var i = 0; i < _len; i++) {
 		if (ezRoomEditor_core_get_forbidden_variable(_vars[i])) continue;
 		
@@ -90,16 +98,49 @@ function ezRoomEditor_add_editable_variables(_vars, _is_prop = false, _type = ez
 			value: variable_instance_get(id, _vars[i]),
 			type: _type,
 			isProperty: _is_prop,
+			propParentName: _prop_parent_name ?? object_get_name(id.object_index),
 		});
 	}
 }
+/// @func	ezRoomEditor_add_editable_variables_with_slider(str_or_array, slider_range, type, is_property, property_parent)
+/// @param	{str|array}	str_or_array
+/// @param	{array}	slider_range
+/// @param	{real}	type
+/// @param	{bool}	is_property
+/// @param	{str}	property_parent
+function ezRoomEditor_add_editable_variables_with_slider(_vars, _range, _type = ezre_type_int, _is_prop = false, _prop_parent_name = undefined) {
+	if (is_string(_vars)) {
+		_vars = [_vars];
+	}
+	
+	var _len = get_size(_vars);
+	for (var i = 0; i < _len; i++) {
+		if (ezRoomEditor_core_get_forbidden_variable(_vars[i])) continue;
+		if (_type != ezre_type_int && _type != ezre_type_real) {
+			ezRoomEditor_warning($"\"{ezRoomEditor_core_get_variable_type_name(_type)}\" with type it's not a valid to use sliders. Skipping variable \"{_vars}\".");
+			continue;
+		}
+		
+		array_push(__EZRE_EDIT_VARIABLES, {
+			name: _vars[i],
+			value: variable_instance_get(id, _vars[i]),
+			type: _type,
+			isProperty: _is_prop,
+			propParentName: _prop_parent_name ?? object_get_name(id.object_index),
+			sliderEnabled: true,
+			sliderRange: _range,
+		});
+	}
+}
+
 
 /// @func	ezRoomEditor_set_ignored_variables(var_name_array)
 /// @param	{array}	var_name_array
 function ezRoomEditor_set_ignored_variables(_arr) {
 	__EZRE_EDIT_IGNORED = [];
+	var _arr_len = get_size(_arr);
 	
-	for (var i = 0; i < get_size(_arr); i++) {
+	for (var i = 0; i < _arr_len; i++) {
 		__EZRE_EDIT_IGNORED[i] = _arr[i];
 	}
 }
@@ -215,8 +256,11 @@ function ezRoomEditor_editable_set_variable_value(_inst_name, _var_name, _value,
 	var _inst = __EZRE_CONTROLLER.__EZRE_EDIT_INSTANCES_AVAILABLE[$ _inst_name];
 	var _variables = _inst[$ "inst_in_room_id"].__EZRE_EDIT_VARIABLES;
 	var _var_index = -1;
+	var _vars_len = get_size(_variables);
+	var _props_len = get_size(_inst[$ "data"][$ "properties"]);
 	
-	for (var i = 0; i < get_size(_variables); i++) {
+	for (var i = 0; i < _vars_len; i++) {
+		// Assign index if found
 		if (_var_name == _variables[@ i][$ "name"]) {
 			_var_index = i;
 			break;
@@ -224,6 +268,17 @@ function ezRoomEditor_editable_set_variable_value(_inst_name, _var_name, _value,
 	}
 	
 	if (_var_index != -1) {
+		// This fixes the "property: null" issue
+		for (var i = 0; i < _props_len; i++) {
+			if (_inst[$ "data"][$ "properties"][@ i][$ "propertyId"] == pointer_null) {
+				var prop_parent_name = _inst[$ "inst_in_room_id"].__EZRE_EDIT_VARIABLES[_var_index].propParentName;
+				_inst[$ "data"][$ "properties"][@ i][$ "propertyId"] = {
+					name: _var_name,
+					path: $"objects/{prop_parent_name}/{prop_parent_name}.yy",
+				}
+			}
+		}
+		
 		_inst[$ "inst_in_room_id"].__EZRE_EDIT_VARIABLES[_var_index][$ "value"] = _value;
 		variable_instance_set(_inst[$ "inst_in_room_id"], _var_name, _value);
 		_var_name = ezRoomEditor_core_get_builtin_equivalent(_var_name);
@@ -247,15 +302,19 @@ function ezRoomEditor_editable_set_variable_value(_inst_name, _var_name, _value,
 			
 			// Fix assets to save names instead of int values
 			if (_type == ezre_type_asset_sprite) {
-				_value = __EZRE_CONTROLLER.__EZRE_ASSETS[$ "sprites"][_value];
+				_value = _value < 0 ? "noone" : __EZRE_CONTROLLER.__EZRE_ASSETS[$ "sprites"][_value];
 			}
 			
 			if (_type == ezre_type_asset_object) {
-				_value = __EZRE_CONTROLLER.__EZRE_ASSETS[$ "objects"][_value];
+				_value = _value < 0 ? "noone" : __EZRE_CONTROLLER.__EZRE_ASSETS[$ "objects"][_value];
 			}
 			
 			if (_type == ezre_type_asset_script) {
-				_value = __EZRE_CONTROLLER.__EZRE_ASSETS[$ "scripts"][_value - 100001];
+				_value = _value < 0 ? "noone" : __EZRE_CONTROLLER.__EZRE_ASSETS[$ "scripts"][_value - 100001];
+			}
+			
+			if (_type == ezre_type_asset_audio) {
+				_value = _value < 0 ? "noone" : __EZRE_CONTROLLER.__EZRE_ASSETS[$ "sounds"][_value];
 			}
 		}
 		
@@ -267,7 +326,8 @@ function ezRoomEditor_editable_set_variable_value(_inst_name, _var_name, _value,
 			}
 			
 			var _prop_index = -1;
-			for (var i = 0; i < get_size(_inst[$ "data"][$ "properties"]); i++) {
+			var _props_len = get_size(_inst[$ "data"][$ "properties"]);
+			for (var i = 0; i < _props_len; i++) {
 				if (_var_name == _inst[$ "data"][$ "properties"][@ i][$ "propertyId"][$ "name"]) {
 					_prop_index = i;
 					break;

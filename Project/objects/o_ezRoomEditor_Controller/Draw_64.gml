@@ -1,6 +1,6 @@
 /// @description Draw editable objects
-display_set_gui_maximize(__EZRE_GUI_SCALE, __EZRE_GUI_SCALE);
 if (__EZRE_EDIT_ENABLED) {
+	display_set_gui_maximize(__EZRE_GUI_SCALE, __EZRE_GUI_SCALE);
 	draw_set_alpha(1);
 	draw_set_halign(fa_center);
 	draw_set_valign(fa_top);

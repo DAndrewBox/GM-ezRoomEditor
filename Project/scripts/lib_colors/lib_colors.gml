@@ -5,9 +5,9 @@
 /// @desc	Returns a decimal value given wrapped RGB values.
 function rgb(_r, _g, _b) {
 	return make_colour_rgb(
-		wrap(_r, 0, 255),
-		wrap(_g, 0, 255),
-		wrap(_b, 0, 255)
+		_r & 255,
+		_g & 255,
+		_b & 255
 	);
 }
 
@@ -18,9 +18,9 @@ function rgb(_r, _g, _b) {
 /// @desc	Returns a decimal value given wrapped RGB values.
 function hsv(_h, _s, _v) {
 	return make_colour_hsv(
-		wrap(_h, 0, 255),
-		wrap(_s, 0, 255),
-		wrap(_v, 0, 255)
+		_h & 255,
+		_s & 255,
+		_v & 255
 	);
 }
 

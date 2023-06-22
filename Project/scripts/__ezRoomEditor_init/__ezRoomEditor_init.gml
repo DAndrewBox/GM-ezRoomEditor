@@ -11,6 +11,7 @@
 #macro	ezre_type_asset_sprite	__EZRE_TYPES.ASSET_SPRITE
 #macro	ezre_type_asset_script	__EZRE_TYPES.ASSET_SCRIPT
 #macro	ezre_type_asset_object	__EZRE_TYPES.ASSET_OBJECT
+#macro	ezre_type_asset_audio	__EZRE_TYPES.ASSET_AUDIO
 #macro	ezre_type_any			__EZRE_TYPES.ANY
 #endregion
 
@@ -32,6 +33,7 @@ enum __EZRE_TYPES {
 	ASSET_SPRITE,
 	ASSET_SCRIPT,
 	ASSET_OBJECT,
+	ASSET_AUDIO,
 	ANY,
 }
 

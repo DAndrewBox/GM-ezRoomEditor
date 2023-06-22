@@ -2,22 +2,26 @@
 __EZRE_ROOM_FILE	= $"{__EZRE_ROOMS_PATH}\\{room_get_name(room)}\\{room_get_name(room)}.yy";
 
 if (get_size(__EZRE_EDIT_INSTANCES_AVAILABLE) == 0) {
+	instance_activate_all();
 	var _file = file_text_open_read(__EZRE_ROOM_FILE);
 	var _str = file_text_read_whole(_file);
 	file_text_close(_file);
 	var _json = json_parse(_str);
 	var _layers = _json[$ "layers"];
 	var _instance_layers = [];
+	var _layers_len = get_size(_layers);
 
-	for (var i = 0; i < get_size(_layers); i++) {
+	for (var i = 0; i < _layers_len; i++) {
 		if (_layers[i][$ "resourceType"] == "GMRInstanceLayer") {
 			array_push(_instance_layers, _layers[i]);
 		}
 	}
 
-	for (var i = 0; i < get_size(_instance_layers); i++) {
+	var _inst_layers_len = get_size(_instance_layers);
+	for (var i = 0; i < _inst_layers_len; i++) {
 		var _layer = _instance_layers[i];
-		for (var j = 0; j < get_size(_layer[$ "instances"]); j++) {
+		var _inst_len = get_size(_layer[$ "instances"]);
+		for (var j = 0; j < _inst_len; j++) {
 			var _inst = _layer[$ "instances"][j];
 			__EZRE_EDIT_INSTANCES_AVAILABLE[$ _inst[$ "name"]] = {
 				data: _inst,
@@ -42,11 +46,16 @@ if (get_size(__EZRE_EDIT_INSTANCES_AVAILABLE) == 0) {
 		
 			_inst_id.__EZRE_EDIT_CONST_ID = _inst[$ "name"];
 			_inst_id.__EZRE_EDIT_ACTIVE = true;
+			_inst_id.__EZRE_EDIT_CREATION_CODE =
+				_inst[$ "hasCreationCode"]
+				? ezRoomEditor_core_get_creation_code(_inst[$ "name"])
+				: false;
 		}
 	}
 } else {
 	var _instances = ezRoomEditor_core_get_editable_instances_ids();
-	for (var i = 0; i < get_size(_instances); i++) {
+	var _inst_len = get_size(_instances);
+	for (var i = 0; i < _inst_len; i++) {
 		if (!instance_exists(_instances[i])) continue;
 		_instances[i].__EZRE_EDIT_ACTIVE = true;
 	}
